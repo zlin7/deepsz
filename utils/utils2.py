@@ -4,6 +4,7 @@ import utils.gen_cutouts as gc
 
 from sklearn import metrics
 import pandas as pd
+import ipdb
 
 import matplotlib
 from matplotlib import pyplot as plt
@@ -786,7 +787,7 @@ def show_cutouts(df, get_x_func, n=5, cutout_size=8./60, show_freq=True, save_pa
             #plt.imshow(img[:,:,c], cmap='gray')
             im = plt.imshow(img[:, :, c], cmap='gray', extent=[cutout_size / 2, -cutout_size / 2, cutout_size / 2, -cutout_size / 2])
             plt.tick_params(axis='both', which='both', bottom=False, top=False, labelbottom=False, right=False, left=False, labelleft=False)
-            plt.scatter([r['CL_ra'] - r['cutout_ra']], [r['CL_dec'] - r['cutout_dec']], s=200, c='red', marker='x', linewidth='3')
+            plt.scatter([r['CL_ra'] - r['cutout_ra']], [r['CL_dec'] - r['cutout_dec']], s=200, c='red', marker='x', linewidth=3)
             plt.title("freq %d GHz" % ({0:90,1:148,2:219}[c]), fontsize=font)
             if c == 0: plt.ylabel("img %d" % r['cutout_id'], fontsize=font)
 
@@ -805,7 +806,6 @@ def _get_cax_for_colobar(ax, fig):
 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.axes_grid1 import ImageGrid
-import ipdb
 def show_cutout_full(r, get_comp_func, cutout_size=8./60, save_path=None, font=DEFAULT_FONT, separate_cbar=None, mark=True,
                      normalization=None,
                      components = ['samples', 'ksz', 'ir_pts', 'rad_pts', 'dust'],
@@ -898,7 +898,7 @@ def show_cutout_full(r, get_comp_func, cutout_size=8./60, save_path=None, font=D
             cplt.tick_params(axis='both', which='both', bottom=False, top=False, labelbottom=False, right=False, left=False, labelleft=False)
 
 
-            if mark: cplt.scatter([r['CL_ra'] - r['cutout_ra']], [r['CL_dec'] - r['cutout_dec']], s=200, c='red', marker='x', linewidth='3')
+            if mark: cplt.scatter([r['CL_ra'] - r['cutout_ra']], [r['CL_dec'] - r['cutout_dec']], s=200, c='red', marker='x', linewidth=3)
             if separate_cbar == 'each':
                 divider = make_axes_locatable(cplt)
                 cax = divider.append_axes('right', size='5%', pad=0.05)
@@ -949,7 +949,8 @@ def show_range(df, get_x_func, n=5, cnn_prob=(0.6, 1.0), mf_sn=(3., 5.), which='
         df = df[df[label_col]] if tp else df[~df[label_col]]
     print(ss)
     print("there are {} such cutouts ".format(len(df)))
-    show_cutouts(df, get_x_func, n,cutout_size, save_path=save_path)
+    if get_x_func is not None:
+        show_cutouts(df, get_x_func, n,cutout_size, save_path=save_path)
     return df
 
 def false_color(x, params=None):
@@ -1345,7 +1346,7 @@ def show_range_by_pred_value(df, get_x_func, nrow=4, ncol=4, feature='redshift',
 def plot_features(df, x='redshift', y='rvir', c='tSZ', font=DEFAULT_FONT, ranges={}):
     plt.rcParams.update({'font.size': font})
     col_to_name = {"rvir": "Virial Radius (Mpc)", "Mvir": "Virial Mass ($M_\\odot$)",
-                   "tSZ":"tSZ (arcmin^2)", "redshift":"Redshift"}
+                   "tSZ":"tSZ (arcmin$^2$)", "redshift":"Redshift"}
     cm = plt.cm.get_cmap('RdYlBu')
     if c in ranges:
         sc = plt.scatter(df[x], df[y], c=df[c], cmap=cm, vmax=ranges[c][1], vmin=ranges[c][0])
@@ -1371,27 +1372,28 @@ def plot_relative_loc(df, cutout_size=8./60, font=DEFAULT_FONT):
     df['rel_ra'] = df['CL_ra'] - df['cutout_ra']
     df['rel_dec'] = df['CL_dec'] - df['cutout_dec']
     plt.scatter(df['rel_ra'], df['rel_dec'])
-    plt.xlabel("Relative RA", fontsize=font)
+    plt.xlabel("Relative RA (degree)", fontsize=font)
     plt.xlim((-cutout_size / 2, cutout_size/2))
-    plt.ylabel("Relative Dec", fontsize=font, labelpad=0)
+    plt.ylabel("Relative Dec (degree)", fontsize=font, labelpad=0)
     plt.ylim((-cutout_size / 2, cutout_size / 2))
     #plt.title("Halo dist. within cutout")
 
 
 def plot_all(df, cutout_size=8./60,save_path=None, font=DEFAULT_FONT, ranges = {}):
     # features, relative locations,
-    f = plt.figure(figsize=(16, 5))
+    f, axes = plt.subplots(1, 2, figsize=(12.5, 5), gridspec_kw={'width_ratios': [1.5, 1]})
     plt.rcParams.update({'font.size': font})
 
     """
     fig, axes = plt.subplots(nrows=len(rows), ncols=len(cols), figsize=(3 * len(cols), 3 * len(rows)))
     fig.tight_layout()
     """
-    f.add_subplot(1, 2, 1)
+    #f.add_subplot(1, 2, 1)
+    plt.sca(axes[0])
     plot_features(df, font=font, ranges=ranges)
     #plt.subplots_adjust(bottom=0.1, right=0.8, top=0.9)
-    f.add_subplot(1, 2, 2)
-
+    #f.add_subplot(1, 2, 2)
+    plt.sca(axes[1])
     plot_relative_loc(df, cutout_size=cutout_size)
     f.tight_layout()
     if save_path is not None: plt.savefig(save_path, dpi=500, bbox_inches="tight")
@@ -1778,7 +1780,7 @@ def plot_completeness(df, methods=['CNN', 'MF', 'EnsemblePROD'],
     df2 = df[(df['redshift'] > 0.25) if col == 'Mvir' else (df['Mvir'] > 2e14)]
 
     from matplotlib import gridspec
-    fig = plt.figure(figsize=(20,10 * (4./3 if col == 'Mvir' else 1.)))
+    fig = plt.figure(figsize=(12, 6 * (1.3 if col == 'Mvir' else 1.)))
     #fig, ax = plt.subplots(figsize=(20,10))
     if col == 'Mvir':
         gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
@@ -1809,7 +1811,7 @@ def plot_completeness(df, methods=['CNN', 'MF', 'EnsemblePROD'],
     else:
         y_labels = []
     #ax2.set_yticklabels(y_labels)
-    plt.legend(lns, legends, loc='right')
+    plt.legend(lns, legends, loc='right', prop={'size': 12})
     #plt.title('Completeness (Recall) vs %s' % col_name)
     print('Completeness (Re call) vs %s' % col_name)
 
