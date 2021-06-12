@@ -1,5 +1,6 @@
 # MF Codes
-The codes used for matched filters are proprietary, so we won't be releasing them.
+The codes used for matched filters are proprietary, so we won't be releasing them. 
+Interested readers could reach out to Nicholas Huang (ndhuang AT berkeley DOT edu).
 
 # CNN Codes
 Please refer to README in `./CNN`. 
